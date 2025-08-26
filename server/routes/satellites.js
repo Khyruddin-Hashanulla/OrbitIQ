@@ -7,11 +7,97 @@ const router = express.Router();
 const intlDesCache = new Map(); // key: noradId -> { value: 'YYYY-NNNP', ts: number }
 const INTL_DES_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+// Function to return static satellites as immediate fallback
+function getStaticSatellites() {
+  const staticSatellites = [
+    { noradId: 25544, category: 'ISS', name: 'International Space Station' },
+    { noradId: 20580, category: 'Scientific', name: 'Hubble Space Telescope' },
+    { noradId: 33591, category: 'Weather', name: 'NOAA-19' },
+    { noradId: 38771, category: 'Weather', name: 'GOES-14' },
+    { noradId: 41866, category: 'Weather', name: 'GOES-16' },
+    { noradId: 28474, category: 'Navigation', name: 'GPS BIIR-13' },
+    { noradId: 32711, category: 'Navigation', name: 'GPS BIIR-10' },
+    { noradId: 41783, category: 'Scientific', name: 'Sentinel-3A' },
+    { noradId: 44714, category: 'Communication', name: 'Starlink-1008' },
+    { noradId: 43013, category: 'Weather', name: 'GOES-17' }
+  ];
+
+  return staticSatellites.map(sat => {
+    const realisticPosition = generateRealisticPosition(sat.category, sat.noradId);
+    return {
+      _id: sat.noradId,
+      noradId: sat.noradId,
+      name: sat.name,
+      intlDes: getStaticIntlDes(sat.noradId),
+      launchDate: getStaticLaunchDate(sat.noradId) || null,
+      country: getCountryFromName(sat.name),
+      category: sat.category,
+      status: 'Active',
+      position: {
+        latitude: realisticPosition.latitude,
+        longitude: realisticPosition.longitude,
+        altitude: realisticPosition.altitude,
+        velocity: realisticPosition.velocity,
+        timestamp: new Date()
+      },
+      orbital: {
+        period: calculateOrbitalPeriod(realisticPosition.altitude),
+        inclination: getTypicalInclination(sat.category),
+        apogee: realisticPosition.altitude + Math.random() * 100,
+        perigee: realisticPosition.altitude - Math.random() * 100
+      },
+      lastUpdated: new Date(),
+      dataSource: 'STATIC_FALLBACK'
+    };
+  });
+}
+
 // Get all satellites with filtering and pagination
 router.get('/', async (req, res) => {
   try {
     const { category, status, page = 1, limit = 20, search } = req.query;
     console.log('Satellites API called with params:', { category, status, page, limit, search });
+    
+    // Check if we have valid API keys, if not return static data immediately
+    const hasValidApiKey = process.env.N2YO_API_KEY && 
+                          process.env.N2YO_API_KEY !== 'your_n2yo_api_key_here' && 
+                          process.env.N2YO_API_KEY.length > 10;
+    
+    if (!hasValidApiKey) {
+      console.log('No valid N2YO API key found, returning static satellite data immediately');
+      const staticSatellites = getStaticSatellites();
+      
+      // Apply filters to static data
+      let filteredSatellites = staticSatellites;
+      if (category) {
+        filteredSatellites = staticSatellites.filter(sat => sat.category === category);
+      }
+      if (search) {
+        filteredSatellites = filteredSatellites.filter(sat => 
+          sat.name.toLowerCase().includes(search.toLowerCase()) ||
+          getCountryFromName(sat.name).toLowerCase().includes(search.toLowerCase())
+        );
+      }
+      
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + parseInt(limit);
+      const paginatedSatellites = filteredSatellites.slice(startIndex, endIndex);
+      
+      return res.json({
+        satellites: paginatedSatellites,
+        totalPages: Math.ceil(filteredSatellites.length / limit),
+        currentPage: parseInt(page),
+        total: filteredSatellites.length,
+        metadata: {
+          liveDataCount: 0,
+          simulatedCount: paginatedSatellites.length,
+          lastUpdated: new Date(),
+          apiKeyStatus: 'MISSING',
+          message: 'Using static data - API keys not configured'
+        }
+      });
+    }
     
     // Use curated list of satellites with verified real-time tracking
     let allSatellites = [
@@ -64,10 +150,16 @@ router.get('/', async (req, res) => {
       try {
         console.log(`Fetching real-time data for ${sat.name} (${sat.noradId})`);
         
+        // Check if API key exists, if not skip API call
+        if (!process.env.N2YO_API_KEY || process.env.N2YO_API_KEY === 'your_n2yo_api_key_here') {
+          console.log(`No valid N2YO API key found, using fallback data for ${sat.name}`);
+          throw new Error('No API key configured');
+        }
+        
         // Get real position data from N2YO API with working key
         const response = await axios.get(
           `https://api.n2yo.com/rest/v1/satellite/positions/${sat.noradId}/0/0/0/1/&apiKey=${process.env.N2YO_API_KEY}`,
-          { timeout: 8000 }
+          { timeout: 5000 } // Reduce timeout to 5 seconds
         );
         
         if (response.data.positions && response.data.positions.length > 0) {

@@ -44,7 +44,7 @@ const Satellites = () => {
       
       const response = await axios.get(`${API_BASE_URL}/api/satellites`, { 
         params,
-        timeout: 10000 // 10 second timeout for mobile
+        timeout: 30000 // Increase to 30 seconds for production
       });
       
       console.log('API response:', response.data);
@@ -54,22 +54,13 @@ const Satellites = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching satellites:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error message:', error.message);
+      setError(`Failed to load satellite data. ${error.response?.data?.error || error.message}`);
       
-      let errorMessage = 'Failed to load satellite data. ';
-      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
-        errorMessage += 'Please check your internet connection.';
-      } else if (error.response?.status === 404) {
-        errorMessage += 'API endpoint not found. Please check if the backend is deployed correctly.';
-      } else if (error.response?.status >= 500) {
-        errorMessage += 'Server error. Please try again later.';
-      } else {
-        errorMessage += `Error: ${error.message}`;
+      // If it's a timeout, show a more helpful message
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        setError('Satellite data is taking longer than expected to load. The server may be starting up or experiencing high load. Please try again in a moment.');
       }
       
-      setError(errorMessage);
       setLoading(false);
     }
   };

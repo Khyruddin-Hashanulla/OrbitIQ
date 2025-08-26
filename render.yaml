@@ -31,6 +31,8 @@ services:
         value: 100
       - key: BCRYPT_ROUNDS
         value: 12
+      - key: CORS_ORIGIN
+        value: https://orbitiq.onrender.com
 
   - type: static
     name: orbitiq-frontend

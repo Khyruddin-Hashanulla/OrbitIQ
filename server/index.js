@@ -18,7 +18,12 @@ const limiter = rateLimit({
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://orbitiq-frontend.onrender.com', process.env.CORS_ORIGIN]
+    ? [
+        'https://orbitiq-frontend.onrender.com', 
+        'https://orbitiq.onrender.com',
+        process.env.CORS_ORIGIN,
+        /\.onrender\.com$/
+      ].filter(Boolean)
     : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
   optionsSuccessStatus: 200,
