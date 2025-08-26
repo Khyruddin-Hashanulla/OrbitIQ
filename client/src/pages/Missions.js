@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Rocket, Calendar, Users, Target, ExternalLink, Search, Filter, X, Globe, Clock } from 'lucide-react';
 import axios from 'axios';
 
+// Configure axios base URL - Fix for development and deployment
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+console.log('API Base URL:', API_BASE_URL);
+
 const Missions = () => {
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +30,7 @@ const Missions = () => {
       
       console.log('Fetching missions with params:', params);
       
-      const response = await axios.get('/api/missions', { params });
+      const response = await axios.get(`${API_BASE_URL}/api/missions`, { params });
       console.log('Missions response:', response.data);
       setMissions(response.data.missions || []);
       setLoading(false);
@@ -44,7 +48,7 @@ const Missions = () => {
     try {
       setLoading(true);
       console.log('Initiating SpaceX sync...');
-      const response = await axios.get('/api/missions/spacex/sync');
+      const response = await axios.get(`${API_BASE_URL}/api/missions/spacex/sync`);
       console.log('SpaceX sync response:', response.data);
       fetchMissions();
     } catch (error) {

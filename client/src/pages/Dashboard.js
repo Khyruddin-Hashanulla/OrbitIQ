@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, Satellite, Rocket, Calendar, TrendingUp, Activity, MapPin, Clock } from 'lucide-react';
 import axios from 'axios';
 
+// Configure axios base URL - Fix for development and deployment
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+console.log('API Base URL:', API_BASE_URL);
+
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     satellites: { total: 0, active: 0 },
@@ -26,9 +30,9 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const [satellitesRes, missionsRes, launchesRes] = await Promise.all([
-        axios.get('/api/satellites?limit=1'),
-        axios.get('/api/missions/stats/overview'),
-        axios.get('/api/launches/stats/overview')
+        axios.get(`${API_BASE_URL}/api/satellites?limit=1`),
+        axios.get(`${API_BASE_URL}/api/missions/stats/overview`),
+        axios.get(`${API_BASE_URL}/api/launches/stats/overview`)
       ]);
 
       const missionsOverview = missionsRes?.data?.overview || {};
@@ -60,7 +64,7 @@ const Dashboard = () => {
 
   const fetchISSPosition = async () => {
     try {
-      const response = await axios.get('/api/satellites/iss/position');
+      const response = await axios.get(`${API_BASE_URL}/api/satellites/iss/position`);
       setIssPosition(response.data);
     } catch (error) {
       console.error('Error fetching ISS position:', error);
@@ -69,7 +73,7 @@ const Dashboard = () => {
 
   const fetchUpcomingLaunches = async () => {
     try {
-      const response = await axios.get('/api/launches/upcoming/next?limit=5');
+      const response = await axios.get(`${API_BASE_URL}/api/launches/upcoming/next?limit=5`);
       setUpcomingLaunches(response.data);
     } catch (error) {
       console.error('Error fetching upcoming launches:', error);

@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -19,26 +18,35 @@ const limiter = rateLimit({
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://orbitiq.onrender.com', process.env.CORS_ORIGIN]
-    : true,
+    ? ['https://orbitiq-frontend.onrender.com', process.env.CORS_ORIGIN]
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false
 }));
+
+// Log incoming origin for debugging CORS
+app.use((req, res, next) => {
+  if (req.headers.origin) {
+    console.log(`[CORS] Origin: ${req.headers.origin}  Method: ${req.method}  Path: ${req.path}`);
+  }
+  next();
+});
+
 app.use(cors(corsOptions));
+// Ensure preflight requests are handled
+app.options('*', cors(corsOptions));
+
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'public')));
-}
 
 // MongoDB connection with better error handling
 const connectDB = async () => {
@@ -73,13 +81,6 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
-
-// Serve React app in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  });
-}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

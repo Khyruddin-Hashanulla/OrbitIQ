@@ -3,6 +3,10 @@ import { Newspaper, ExternalLink, Clock, User, Search, Filter } from 'lucide-rea
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
+// Configure axios base URL - Fix for development and deployment
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+console.log('API Base URL:', API_BASE_URL);
+
 const News = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +23,7 @@ const News = () => {
         ...(selectedSource && { source: selectedSource.toLowerCase().replace(' ', '-') })
       };
       
-      const response = await axios.get('/api/news', { params });
+      const response = await axios.get(`${API_BASE_URL}/api/news`, { params });
       setArticles(response.data.articles || []);
       setLoading(false);
     } catch (error) {

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Satellite, MapPin, Clock, Zap, Search, Filter, X, Calendar, Globe, Activity } from 'lucide-react';
 import axios from 'axios';
 
-// Configure axios base URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-axios.defaults.baseURL = API_BASE_URL;
+// Configure axios base URL - Fix for mobile deployment
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : 'http://localhost:5000');
+console.log('API Base URL:', API_BASE_URL);
 
 const Satellites = () => {
   const [satellites, setSatellites] = useState([]);
@@ -40,7 +40,13 @@ const Satellites = () => {
       };
       
       console.log('Fetching satellites with params:', params);
-      const response = await axios.get('/api/satellites', { params });
+      console.log('Making request to:', `${API_BASE_URL}/api/satellites`);
+      
+      const response = await axios.get(`${API_BASE_URL}/api/satellites`, { 
+        params,
+        timeout: 10000 // 10 second timeout for mobile
+      });
+      
       console.log('API response:', response.data);
       console.log('Satellites received:', response.data.satellites?.length || 0);
       
@@ -49,14 +55,30 @@ const Satellites = () => {
     } catch (error) {
       console.error('Error fetching satellites:', error);
       console.error('Error response:', error.response?.data);
-      setError('Failed to load real-time satellite data. Please check if the server is running and N2YO API is accessible.');
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'Failed to load satellite data. ';
+      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        errorMessage += 'Please check your internet connection.';
+      } else if (error.response?.status === 404) {
+        errorMessage += 'API endpoint not found. Please check if the backend is deployed correctly.';
+      } else if (error.response?.status >= 500) {
+        errorMessage += 'Server error. Please try again later.';
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };
 
   const fetchISSPosition = async () => {
     try {
-      const response = await axios.get('/api/satellites/iss/position');
+      const response = await axios.get(`${API_BASE_URL}/api/satellites/iss/position`, {
+        timeout: 8000
+      });
       setIssPosition(response.data);
     } catch (error) {
       console.error('Error fetching ISS position:', error);

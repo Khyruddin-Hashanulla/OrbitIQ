@@ -3,6 +3,10 @@ import { Calendar, MapPin, Rocket, Clock, ExternalLink, Search, Filter, Play, X,
 import axios from 'axios';
 import { format, formatDistanceToNow, isAfter } from 'date-fns';
 
+// Configure axios base URL - Fix for development and deployment
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+console.log('API Base URL:', API_BASE_URL);
+
 const Launches = () => {
   const [launches, setLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +32,7 @@ const Launches = () => {
       
       console.log('Fetching launches with params:', params);
       
-      const response = await axios.get('/api/launches', { params });
+      const response = await axios.get(`${API_BASE_URL}/api/launches`, { params });
       console.log('Launches response:', response.data);
       setLaunches(response.data.launches || []);
       setLoading(false);
@@ -41,7 +45,7 @@ const Launches = () => {
   const syncUpcomingLaunches = async () => {
     try {
       setLoading(true);
-      await axios.get('/api/launches/sync/upcoming');
+      await axios.get(`${API_BASE_URL}/api/launches/sync/upcoming`);
       fetchLaunches();
     } catch (error) {
       console.error('Error syncing launches:', error);
