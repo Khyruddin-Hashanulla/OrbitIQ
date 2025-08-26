@@ -19,7 +19,7 @@ const limiter = rateLimit({
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://orbitiq-frontend.onrender.com', process.env.CORS_ORIGIN]
+    ? ['https://orbitiq.onrender.com', process.env.CORS_ORIGIN]
     : true,
   credentials: true,
   optionsSuccessStatus: 200
