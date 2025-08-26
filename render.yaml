@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: orbitiq-backend
+    env: node
+    plan: starter
+    buildCommand: npm run build:production
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: orbitiq-atlas
+          property: connectionString
+      - key: NASA_API_KEY
+        sync: false
+      - key: N2YO_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SPACEX_API_URL
+        value: https://api.spacexdata.com/v5
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: BCRYPT_ROUNDS
+        value: 12
+
+  - type: static
+    name: orbitiq-frontend
+    buildCommand: cd client && npm ci && npm run build
+    staticPublishPath: ./client/build
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://orbitiq-backend.onrender.com
