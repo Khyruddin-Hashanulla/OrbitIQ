@@ -34,7 +34,7 @@ services:
 
   - type: static
     name: orbitiq-frontend
-    buildCommand: cd client && npm ci && npm run build
+    buildCommand: cd client && npm install && npm run build
     staticPublishPath: ./client/build
     pullRequestPreviewsEnabled: true
     headers:
