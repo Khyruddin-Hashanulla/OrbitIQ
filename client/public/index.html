@@ -4,14 +4,28 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/Logo.png" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/Logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#0a0a0f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta
       name="description"
       content="OrbitIQ - Your one-stop hub for space exploration, satellite tracking, and mission data"
     />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>OrbitIQ - Space Data & Missions Hub</title>
+    <style>
+      /* Prevent zoom on mobile inputs */
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+      /* Ensure proper mobile rendering */
+      body {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
